@@ -331,20 +331,20 @@ def get_items():
     try:
         with conn.cursor() as cursor:
             if sort == 'like':
-                query = 'SELECT id, user_id, title, likes, created_at ' \
-                        'FROM items;'
+                query = 'SELECT items.id, items.user_id, items.title, items.likes, items.created_at, users.username ' \
+                        'FROM items left join users on items.user_id = users.id ORDER BY items.likes DESC;'
                 cursor.execute(query,)
                 app.logger.debug(cursor._last_executed)
             else:
-                query = 'SELECT id, user_id, title, likes, created_at ' \
-                        'FROM items ORDER BY created_at DESC '\
+                query = 'SELECT items.id, items.user_id, items.title, items.likes, items.created_at, users.username ' \
+                        'FROM items left join users on items.user_id = users.id ORDER BY items.created_at DESC '\
                         'LIMIT %s OFFSET %s ;'
                 cursor.execute(query, (ITEM_LIMIT, offset,))
                 app.logger.debug(cursor._last_executed)
 
             result = cursor.fetchall()
 
-            query = 'SELECT * FROM items'
+            query = 'SELECT id FROM items'
             cursor.execute(query,)
             app.logger.debug(cursor._last_executed)
             result_for_count = cursor.fetchall()
@@ -354,22 +354,14 @@ def get_items():
             result = list()
         else:
             for i, item in enumerate(result):
-                with conn.cursor() as cursor:
-                    query = 'SELECT * FROM users WHERE id = %s;'
-                    cursor.execute(query, (result[i]['user_id'],))
-                    app.logger.debug(cursor._last_executed)
-                    result_user = cursor.fetchone()
-                    result[i]['username'] = result_user['username']
 
                 if item['likes'] is None:
                     result[i]['likes'] = list()
                 else:
                     result[i]['likes'] = [
-                            str(n) for n in item['likes'].split(',')]
+                        str(n) for n in item['likes'].split(',')]
 
             if sort == 'like':
-                result = sorted(result, key=lambda x: len(x['likes']))
-                result.reverse()
                 result = result[offset:offset+ITEM_LIMIT]
 
         for r in result:
