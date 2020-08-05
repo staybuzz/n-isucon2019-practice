@@ -1,6 +1,11 @@
 server {
   listen 80;
   server_name _;
+  root /home/isucon/app/public;
+  location /users/ {
+    default_type image/png;
+    try_files $uri /img/default_user_icon.png;
+  }
   location / {
     include uwsgi_params;
     uwsgi_pass unix:///home/isucon/app/python/server.sock;
