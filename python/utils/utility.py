@@ -10,11 +10,7 @@ def get_salt():
 def get_passwordhash(salt, password):
     string = password + salt
     for _ in range(1000):
-        cmd = 'echo -n ' + string + ' | openssl sha256'
-        string = (subprocess.check_output(cmd, shell=True)
-                            .decode('utf-8')
-                            .partition(' ')[2]
-                            .rstrip())
+        string = hashlib.sha256(string.encode()).hexdigest()
     return string
 
 
