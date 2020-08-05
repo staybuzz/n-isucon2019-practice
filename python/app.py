@@ -388,10 +388,12 @@ def post_icon(username):
         abort(400)
 
     file = request.files['iconimage']
-    with tempfile.TemporaryFile() as tempf:
+    icon_dir = os.path.join(str(static_folder), 'users', username)
+    if not os.path.exists(icon_dir):
+        os.makedirs(icon_dir)
+    with open(os.path.join(icon_dir, 'icon'), 'wb') as tempf:
         file.save(tempf)
-        tempf.flush()
-        tempf.seek(0)
+    with open(os.path.join(icon_dir, 'icon'), 'rb') as tempf:
         icon_img = tempf.read()
 
     conn = pymysql.connect(**dbparams)
