@@ -1,7 +1,7 @@
 from datetime import datetime as dt
 import subprocess
 import secrets
-
+import hashlib
 
 def get_salt():
     return secrets.token_hex(64)
