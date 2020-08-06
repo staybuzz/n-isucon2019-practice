@@ -20,6 +20,8 @@ CREATE TABLE `items` (
     PRIMARY KEY (`id`)
 );
 
+-- これでカラム追加してね
+-- ALTER TABLE `items` ADD `likes_count` INT(8) unsigned DEFAULT NULL;
 
 CREATE TABLE `icon` (
     `id` INT(8) unsigned NOT NULL AUTO_INCREMENT,

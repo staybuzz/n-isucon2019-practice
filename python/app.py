@@ -332,7 +332,7 @@ def get_items():
         with conn.cursor() as cursor:
             if sort == 'like':
                 query = 'SELECT items.id, items.user_id, items.title, items.likes, items.created_at, users.username ' \
-                        'FROM items left join users on items.user_id = users.id ORDER BY items.likes DESC;'
+                        'FROM items left join users on items.user_id = users.id ORDER BY items.likes_count DESC;'
                 cursor.execute(query,)
                 app.logger.debug(cursor._last_executed)
             else:
@@ -563,7 +563,7 @@ def get_likes(item_id):
     conn = pymysql.connect(**dbparams)
     try:
         with conn.cursor() as cursor:
-            query = 'SELECT likes FROM items WHERE id=%s'
+            query = 'SELECT likes, likes_count FROM items WHERE id=%s'
             cursor.execute(query, (item_id,))
             app.logger.debug(cursor._last_executed)
             result = cursor.fetchone()
@@ -576,7 +576,7 @@ def get_likes(item_id):
             if likes is None:
                 res = {"likes": "", "like_count": 0}
             else:
-                likes_count = len(likes.split(','))
+                likes_count = result['likes_count']
                 res = {"likes": likes, "like_count": likes_count}
 
             return jsonify(res)
@@ -591,7 +591,7 @@ def post_likes(item_id):
 
     try:
         with conn.cursor() as cursor:
-            query = 'SELECT likes FROM items WHERE id=%s'
+            query = 'SELECT likes, likes_count FROM items WHERE id=%s'
             cursor.execute(query, (item_id,))
             app.logger.debug(cursor._last_executed)
             result = cursor.fetchone()
@@ -601,19 +601,22 @@ def post_likes(item_id):
 
             username = current_user.get_username()
             likes = result['likes'] or ''
+            likes_count = result['likes_count'] or 0
             if len(likes) == 0:
                 likes_str = username
+                likes_count += 1
             else:
                 current_likes_list = likes.split(',')
 
                 if username not in current_likes_list:
                     current_likes_list.append(username)
                     likes_str = ','.join(list(current_likes_list))
+                    likes_count += 1
                 else:
                     likes_str = likes
 
-            query = 'UPDATE items SET likes=%s WHERE id=%s'
-            cursor.execute(query, (likes_str, item_id,))
+            query = 'UPDATE items SET likes=%s, likes_count=%s WHERE id=%s'
+            cursor.execute(query, (likes_str, likes_count, item_id,))
             app.logger.debug(cursor._last_executed)
             conn.commit()
     finally:
@@ -629,7 +632,7 @@ def delete_likes(item_id):
 
     try:
         with conn.cursor() as cursor:
-            query = 'SELECT likes FROM items WHERE id=%s'
+            query = 'SELECT likes, likes_count FROM items WHERE id=%s'
             cursor.execute(query, (item_id,))
             app.logger.debug(cursor._last_executed)
             result = cursor.fetchone()
@@ -638,6 +641,7 @@ def delete_likes(item_id):
                 abort(404)
 
             likes = result['likes'] or ''
+            likes_count = result['likes_count'] or 0
             if len(likes) == 0:
                 abort(404)
             else:
@@ -648,13 +652,14 @@ def delete_likes(item_id):
                     abort(404)
                 else:
                     current_likes_list.remove(username)
+                    likes_count -= 1
                     if len(current_likes_list) == 0:
                         likes_str = None
                     else:
                         likes_str = ','.join(list(current_likes_list))
 
-            query = 'UPDATE items SET likes=%s WHERE id=%s'
-            cursor.execute(query, (likes_str, item_id,))
+            query = 'UPDATE items SET likes=%s, likes_count=%s WHERE id=%s'
+            cursor.execute(query, (likes_str, likes_count, item_id,))
             app.logger.debug(cursor._last_executed)
             conn.commit()
     finally:
@@ -817,8 +822,35 @@ def get_username_by_id(user_id):
 @app.route('/initialize', methods=['GET'])
 def get_initialize():
     subprocess.call(['../common/db/init.sh'])
+    get_likes_count()
     return '', 200
 
+@app.route('/get_likes_count', methods=['GET'])
+def get_likes_count():
+    conn = pymysql.connect(**dbparams)
+    try:
+        with conn.cursor() as cursor:
+            query = 'SELECT id, likes FROM items'
+            cursor.execute(query, )
+            app.logger.debug(cursor._last_executed)
+            result = cursor.fetchall()
+
+            for item in result:
+
+                likes = item['likes']
+
+                if likes is None:
+                    query = 'UPDATE items SET likes_count=0 where id=%s'
+                    cursor.execute(query, (item['id'],))
+                else:
+                    likes_count = len(likes.split(','))
+                    query = 'UPDATE items SET likes_count=%s where id=%s'
+                    cursor.execute(query, (likes_count, item['id'],))
+
+            conn.commit()
+            return "Done", 200
+    finally:
+        conn.close()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
