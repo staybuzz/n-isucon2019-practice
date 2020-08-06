@@ -387,51 +387,23 @@ def post_icon(username):
     if 'iconimage' not in request.files:
         abort(400)
 
+    icon_dir = os.path.join(str(static_folder), 'users', username)
+    if os.path.exists(os.path.join(icon_dir, 'icon')):
+        abort(409)
+
     file = request.files['iconimage']
-    with tempfile.TemporaryFile() as tempf:
+    if not os.path.exists(icon_dir):
+        os.makedirs(icon_dir)
+    with open(os.path.join(icon_dir, 'icon'), 'wb') as tempf:
         file.save(tempf)
-        tempf.flush()
-        tempf.seek(0)
-        icon_img = tempf.read()
-
-    conn = pymysql.connect(**dbparams)
-    try:
-        with conn.cursor() as cursor:
-            query = 'SELECT * FROM users WHERE username=%s'
-            cursor.execute(query, (username,))
-            app.logger.debug(cursor._last_executed)
-            result = cursor.fetchone()
-
-        if result is None:
-            return '', 404
-
-        with conn.cursor() as cursor:
-            query = 'SELECT * FROM icon WHERE user_id=%s'
-            cursor.execute(query, (result['id'],))
-            app.logger.debug(cursor._last_executed)
-            result_icon = cursor.fetchone()
-
-        if result_icon is None:
-            with conn.cursor() as cursor:
-                query = 'INSERT INTO icon (user_id, icon) ' \
-                    'VALUES (%s, %s)'
-                cursor.execute(query, (str(current_user.get_id()),
-                                       base64.b64encode(icon_img)))
-                app.logger.debug(cursor._last_executed)
-                conn.commit()
-                return "", 201
-        else:
-            abort(409)
-    finally:
-        conn.close()
-
+    return "", 201
 
 @app.route('/users/<string:username>/icon', methods=['GET'])
 def get_icon(username):
     conn = pymysql.connect(**dbparams)
     try:
         with conn.cursor() as cursor:
-            query = 'SELECT * FROM users WHERE username=%s'
+            query = 'SELECT id FROM users WHERE username=%s'
             cursor.execute(query, (username,))
             app.logger.debug(cursor._last_executed)
             result = cursor.fetchone()
@@ -439,25 +411,14 @@ def get_icon(username):
         if result is None:
             return '', 404
 
-        with conn.cursor() as cursor:
-            query = 'SELECT * FROM icon WHERE user_id=%s'
-            cursor.execute(query, (result['id'],))
-            app.logger.debug(cursor._last_executed)
-            result_icon = cursor.fetchone()
-
-        if result_icon is None:
-            return send_file(str(static_folder)
-                             + '/img/default_user_icon.png',
-                             mimetype='image/png')
-        else:
-            icon = base64.b64decode(result_icon['icon'])
-            response = make_response(icon)
-            response.headers.set('Content-Type', 'image/png')
-            return response
+        icon_path = os.path.join(str(static_folder), 'users', username, 'icon')
+        if not os.path.exists(icon_path):
+            return send_file(str(static_folder) + '/img/default_user_icon.png',
+                                mimetype='image/png')
+        return send_file(icon_path, mimetype='image/png')
 
     finally:
         conn.close()
-
 
 @app.route('/items', methods=['POST'])
 @login_required
