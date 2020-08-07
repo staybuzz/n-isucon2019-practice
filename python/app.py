@@ -331,12 +331,12 @@ def get_items():
     try:
         with conn.cursor() as cursor:
             if sort == 'like':
-                query = 'SELECT items.id, items.user_id, items.title, items.likes, items.created_at, users.username ' \
+                query = 'SELECT items.id, items.title, items.created_at, users.username ' \
                         'FROM items left join users on items.user_id = users.id ORDER BY items.likes_count DESC;'
                 cursor.execute(query,)
                 app.logger.debug(cursor._last_executed)
             else:
-                query = 'SELECT items.id, items.user_id, items.title, items.likes, items.created_at, users.username ' \
+                query = 'SELECT items.id, items.title, items.created_at, users.username ' \
                         'FROM items left join users on items.user_id = users.id ORDER BY items.created_at DESC '\
                         'LIMIT %s OFFSET %s ;'
                 cursor.execute(query, (ITEM_LIMIT, offset,))
@@ -350,23 +350,8 @@ def get_items():
             result_for_count = cursor.fetchall()
             num_total_items = len(result_for_count)
 
-        if result is None or len(result) <= 0:
-            result = list()
-        else:
-            for i, item in enumerate(result):
-
-                if item['likes'] is None:
-                    result[i]['likes'] = list()
-                else:
-                    result[i]['likes'] = [
-                        str(n) for n in item['likes'].split(',')]
-
             if sort == 'like':
                 result = result[offset:offset+ITEM_LIMIT]
-
-        for r in result:
-            del r['likes']
-            del r['user_id']
 
         response = {
             'count': num_total_items,
