@@ -80,7 +80,7 @@ def signin():
     conn = pymysql.connect(**dbparams)
 
     with conn.cursor() as cursor:
-        query = 'SELECT * FROM users WHERE username=%s'
+        query = 'SELECT id, username, password_hash, salt FROM users WHERE username=%s'
         cursor.execute(query, (username, ))
         app.logger.debug(cursor._last_executed)
         result = cursor.fetchone()
@@ -161,7 +161,7 @@ def post_users():
     conn = pymysql.connect(**dbparams)
     try:
         with conn.cursor() as cursor:
-            query = 'SELECT * FROM users WHERE username=%s'
+            query = 'SELECT id FROM users WHERE username=%s'
             number_of_rows = cursor.execute(query, (username,))
             app.logger.debug(cursor._last_executed)
 
@@ -177,13 +177,13 @@ def post_users():
                     'salt, created_at, updated_at)' \
                     ' VALUES (%s, %s, %s, %s, %s);'
             cursor.execute(query, (username, password_hash,
-                           salt, current_time, current_time))
+                                   salt, current_time, current_time))
             app.logger.debug(cursor._last_executed)
             user_info = {
-                    'id': cursor.lastrowid,
-                    'username': username,
-                    'created_at': current_time,
-                    'updated_at': current_time
+                'id': cursor.lastrowid,
+                'username': username,
+                'created_at': current_time,
+                'updated_at': current_time
             }
 
         conn.commit()
@@ -210,7 +210,7 @@ def patch_users(username):
     conn = pymysql.connect(**dbparams)
     try:
         with conn.cursor() as cursor:
-            query = 'SELECT * FROM users WHERE username=%s'
+            query = 'SELECT id, username, salt, password_hash FROM users WHERE username=%s'
             cursor.execute(query, (username))
             app.logger.debug(cursor._last_executed)
             result = cursor.fetchone()
@@ -227,7 +227,7 @@ def patch_users(username):
             new_username = result['username']
         else:
             with conn.cursor() as cursor:
-                query = 'SELECT * FROM users WHERE username=%s'
+                query = 'SELECT id FROM users WHERE username=%s'
                 cursor.execute(query, (new_username))
                 app.logger.debug(cursor._last_executed)
                 user = cursor.fetchone()
@@ -271,7 +271,7 @@ def delete_users(username):
     conn = pymysql.connect(**dbparams)
     try:
         with conn.cursor() as cursor:
-            query = 'SELECT * FROM users WHERE username=%s'
+            query = 'SELECT id FROM users WHERE username=%s'
             cursor.execute(query, (username,))
             app.logger.debug(cursor._last_executed)
             result = cursor.fetchone()
@@ -363,8 +363,8 @@ def get_items():
         conn.close()
 
 
-@app.route('/users/<string:username>/icon', methods=['POST'])
-@login_required
+@ app.route('/users/<string:username>/icon', methods=['POST'])
+@ login_required
 def post_icon(username):
     if username != current_user.get_username():
         abort(403)
@@ -383,7 +383,8 @@ def post_icon(username):
         file.save(tempf)
     return "", 201
 
-@app.route('/users/<string:username>/icon', methods=['GET'])
+
+@ app.route('/users/<string:username>/icon', methods=['GET'])
 def get_icon(username):
     conn = pymysql.connect(**dbparams)
     try:
@@ -399,14 +400,15 @@ def get_icon(username):
         icon_path = os.path.join(str(static_folder), 'users', username, 'icon')
         if not os.path.exists(icon_path):
             return send_file(str(static_folder) + '/img/default_user_icon.png',
-                                mimetype='image/png')
+                             mimetype='image/png')
         return send_file(icon_path, mimetype='image/png')
 
     finally:
         conn.close()
 
-@app.route('/items', methods=['POST'])
-@login_required
+
+@ app.route('/items', methods=['POST'])
+@ login_required
 def post_item():
     if request.json is None:
         abort(400)
@@ -426,7 +428,7 @@ def post_item():
             user_id = str(current_user.get_id())
 
             query = 'INSERT INTO items '\
-                    '(user_id, title, body, created_at, updated_at) '\
+                '(user_id, title, body, created_at, updated_at) '\
                     'VALUES (%s, %s, %s, %s, %s);'
             cursor.execute(query, (user_id, title, body, today, today))
             app.logger.debug(cursor._last_executed)
@@ -453,8 +455,8 @@ def post_item():
         conn.close()
 
 
-@app.route('/items/<int:item_id>', methods=['PATCH'])
-@login_required
+@ app.route('/items/<int:item_id>', methods=['PATCH'])
+@ login_required
 def patch_item(item_id):
     if request.json is None:
         abort(400)
@@ -490,7 +492,7 @@ def patch_item(item_id):
 
         with conn.cursor() as cursor:
             query = 'UPDATE items SET title=%s, body=%s, updated_at=%s '\
-                    'WHERE id=%s'
+                'WHERE id=%s'
 
             now = get_today()
             cursor.execute(query, (title, body, now, item_id))
@@ -515,13 +517,13 @@ def patch_item(item_id):
         conn.close()
 
 
-@app.route('/items/<int:item_id>', methods=['DELETE'])
-@login_required
+@ app.route('/items/<int:item_id>', methods=['DELETE'])
+@ login_required
 def delete_item(item_id):
     conn = pymysql.connect(**dbparams)
     try:
         with conn.cursor() as cursor:
-            query = 'SELECT * FROM items WHERE id=%s'
+            query = 'SELECT user_id FROM items WHERE id=%s'
             cursor.execute(query, (item_id,))
             app.logger.debug(cursor._last_executed)
             result = cursor.fetchone()
@@ -543,7 +545,7 @@ def delete_item(item_id):
         conn.close()
 
 
-@app.route('/items/<int:item_id>/likes', methods=['GET'])
+@ app.route('/items/<int:item_id>/likes', methods=['GET'])
 def get_likes(item_id):
     conn = pymysql.connect(**dbparams)
     try:
@@ -569,8 +571,8 @@ def get_likes(item_id):
         conn.close()
 
 
-@app.route('/items/<int:item_id>/likes', methods=['POST'])
-@login_required
+@ app.route('/items/<int:item_id>/likes', methods=['POST'])
+@ login_required
 def post_likes(item_id):
     conn = pymysql.connect(**dbparams)
 
@@ -610,8 +612,8 @@ def post_likes(item_id):
     return '', 204
 
 
-@app.route('/items/<int:item_id>/likes', methods=['DELETE'])
-@login_required
+@ app.route('/items/<int:item_id>/likes', methods=['DELETE'])
+@ login_required
 def delete_likes(item_id):
     conn = pymysql.connect(**dbparams)
 
@@ -653,7 +655,7 @@ def delete_likes(item_id):
     return '', 204
 
 
-@app.route('/items/<int:item_id>/comments', methods=['GET'])
+@ app.route('/items/<int:item_id>/comments', methods=['GET'])
 def get_comments(item_id):
     conn = pymysql.connect(**dbparams)
 
@@ -664,7 +666,7 @@ def get_comments(item_id):
             app.logger.debug(cursor._last_executed)
             result = cursor.fetchone()
 
-            query = 'SELECT * FROM items WHERE id=%s'
+            query = 'SELECT id FROM items WHERE id=%s'
             cursor.execute(query, (item_id,))
             app.logger.debug(cursor._last_executed)
             result_item = cursor.fetchone()
@@ -690,8 +692,8 @@ def get_comments(item_id):
         conn.close()
 
 
-@app.route('/items/<int:item_id>/comments', methods=['POST'])
-@login_required
+@ app.route('/items/<int:item_id>/comments', methods=['POST'])
+@ login_required
 def post_comment(item_id):
     if request.json is None:
         abort(400)
@@ -705,7 +707,7 @@ def post_comment(item_id):
     conn = pymysql.connect(**dbparams)
     try:
         with conn.cursor() as cursor:
-            query = 'SELECT * FROM items WHERE id=%s'
+            query = 'SELECT id FROM items WHERE id=%s'
             cursor.execute(query, (item_id,))
             app.logger.debug(cursor._last_executed)
             result = cursor.fetchone()
@@ -723,7 +725,7 @@ def post_comment(item_id):
             if result is None:  # first comment
                 comment_data['comment_id'] = 1
                 query = 'INSERT INTO comments (id, comment_001) '\
-                        'VALUES (%s, %s)'
+                    'VALUES (%s, %s)'
                 cursor.execute(query, (item_id, json.dumps(comment_data)))
                 app.logger.debug(cursor._last_executed)
             else:
@@ -731,7 +733,7 @@ def post_comment(item_id):
                     if value is None:
                         comment_data['comment_id'] = int(key[-3:])
                         query = 'UPDATE comments SET ' + key + \
-                                '=%s WHERE id=%s'
+                            '=%s WHERE id=%s'
                         cursor.execute(query,
                                        (json.dumps(comment_data), item_id))
                         app.logger.debug(cursor._last_executed)
@@ -747,9 +749,9 @@ def post_comment(item_id):
         conn.close()
 
 
-@app.route('/items/<int:item_id>/comments/<int:comment_id>',
-           methods=['DELETE'])
-@login_required
+@ app.route('/items/<int:item_id>/comments/<int:comment_id>',
+            methods=['DELETE'])
+@ login_required
 def delete_coment(item_id, comment_id):
     conn = pymysql.connect(**dbparams)
     try:
@@ -777,7 +779,7 @@ def delete_coment(item_id, comment_id):
                             abort(403)
                         else:
                             query = 'UPDATE comments SET ' + key + \
-                                    '=NULL WHERE id=%s'
+                                '=NULL WHERE id=%s'
                             cursor.execute(query, item_id)
                             app.logger.debug(cursor._last_executed)
                             conn.commit()
@@ -794,7 +796,7 @@ def get_username_by_id(user_id):
 
     try:
         with conn.cursor() as cursor:
-            query = 'SELECT * FROM users WHERE id = %s'
+            query = 'SELECT username FROM users WHERE id = %s'
             cursor.execute(query, (user_id,))
             app.logger.debug(cursor._last_executed)
             result = cursor.fetchone()
@@ -804,13 +806,14 @@ def get_username_by_id(user_id):
         conn.close()
 
 
-@app.route('/initialize', methods=['GET'])
+@ app.route('/initialize', methods=['GET'])
 def get_initialize():
     subprocess.call(['../common/db/init.sh'])
     get_likes_count()
     return '', 200
 
-@app.route('/get_likes_count', methods=['GET'])
+
+@ app.route('/get_likes_count', methods=['GET'])
 def get_likes_count():
     conn = pymysql.connect(**dbparams)
     try:
@@ -836,6 +839,7 @@ def get_likes_count():
             return "Done", 200
     finally:
         conn.close()
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
