@@ -332,8 +332,9 @@ def get_items():
         with conn.cursor() as cursor:
             if sort == 'like':
                 query = 'SELECT items.id, items.title, items.created_at, users.username ' \
-                        'FROM items left join users on items.user_id = users.id ORDER BY items.likes_count DESC;'
-                cursor.execute(query,)
+                        'FROM items left join users on items.user_id = users.id ORDER BY items.likes_count DESC ' \
+                        'LIMIT %s OFFSET %s ;'
+                cursor.execute(query, (ITEM_LIMIT, offset,))
                 app.logger.debug(cursor._last_executed)
             else:
                 query = 'SELECT items.id, items.title, items.created_at, users.username ' \
@@ -349,9 +350,6 @@ def get_items():
             app.logger.debug(cursor._last_executed)
             result_for_count = cursor.fetchall()
             num_total_items = len(result_for_count)
-
-            if sort == 'like':
-                result = result[offset:offset+ITEM_LIMIT]
 
         response = {
             'count': num_total_items,
