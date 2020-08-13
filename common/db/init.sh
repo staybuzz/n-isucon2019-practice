@@ -18,3 +18,5 @@ mysql -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE -e "DELETE 
 
 # index
 mysql -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE -e "alter table users ADD INDEX username_idx(username(255));"
+mysql -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE -e "alter table items ADD INDEX likes_count_idx(likes_count); "
+mysql -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE -e "alter table items ADD INDEX created_at_idx(created_at); "
