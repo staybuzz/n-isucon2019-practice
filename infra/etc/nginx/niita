@@ -1,12 +1,32 @@
 upstream uwsgi {
-  server unix:///home/isucon/app/python/server.sock;
+  server unix:/home/isucon/app/python/server.sock;
   keepalive 65;
 }
 
 server {
   listen 80;
   server_name _;
+  location ~ /users/.*/icon {
+    include uwsgi_params;
+    if ($request_method = POST) {
+      #rewrite /users/(.*)/iconr /users/$1/icon break;
+      uwsgi_pass uwsgi;
+    }
+    root /home/isucon/app/public;
+    try_files $uri $uri/ @uwsgi;
+    default_type image/png;
+  }
+  location ~ .*\.(htm|html|css|js|jpg|png|gif|ico) {
+    root /home/isucon/app/public;
+    expires 24h;
+    add_header Cache-Control public;
+    open_file_cache max=100;
+  }
   location / {
+    include uwsgi_params;
+    uwsgi_pass uwsgi;
+  }
+  location @uwsgi {
     include uwsgi_params;
     uwsgi_pass uwsgi;
   }
