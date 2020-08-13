@@ -1,8 +1,13 @@
+upstream uwsgi {
+  server unix:///home/isucon/app/python/server.sock;
+  keepalive 65;
+}
+
 server {
   listen 80;
   server_name _;
   location / {
     include uwsgi_params;
-    uwsgi_pass unix:///home/isucon/app/python/server.sock;
+    uwsgi_pass uwsgi;
   }
 }

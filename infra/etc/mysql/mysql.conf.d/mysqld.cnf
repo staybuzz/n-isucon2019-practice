@@ -57,8 +57,9 @@ myisam-recover-options  = BACKUP
 #
 # * Query Cache Configuration
 #
-query_cache_limit	= 1M
-query_cache_size        = 16M
+query_cache_type        = 1
+query_cache_limit	= 2M
+query_cache_size        = 32M
 #
 # * Logging and Replication
 #
@@ -103,3 +104,10 @@ max_binlog_size   = 100M
 # ssl-ca=/etc/mysql/cacert.pem
 # ssl-cert=/etc/mysql/server-cert.pem
 # ssl-key=/etc/mysql/server-key.pem
+max_connections=10000
+innodb_buffer_pool_size = 1GB
+innodb_flush_log_at_trx_commit = 2
+innodb_flush_method = O_DIRECT
+innodb_buffer_pool_dump_pct  = 100
+innodb_buffer_pool_dump_at_shutdown= 1
+innodb_buffer_pool_load_at_startup = 1
