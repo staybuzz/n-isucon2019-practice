@@ -341,14 +341,14 @@ def get_items():
         with conn.cursor() as cursor:
             if sort == 'like':
                 query = 'SELECT items.id, items.title, items.created_at, users.username ' \
-                        'FROM items left join users on items.user_id = users.id ORDER BY items.likes_count DESC ' \
-                        'LIMIT %s OFFSET %s ;'
+                        'FROM items, users, (SELECT id FROM items ORDER BY likes_count DESC LIMIT %s OFFSET %s) AS i ' \
+                        'WHERE i.id = items.id AND items.user_id = users.id;'
                 cursor.execute(query, (ITEM_LIMIT, offset,))
                 app.logger.debug(cursor._last_executed)
             else:
                 query = 'SELECT items.id, items.title, items.created_at, users.username ' \
-                        'FROM items left join users on items.user_id = users.id ORDER BY items.created_at DESC '\
-                        'LIMIT %s OFFSET %s ;'
+                        'FROM items, users, (SELECT id FROM items ORDER BY created_at DESC LIMIT %s OFFSET %s) AS i ' \
+                        'WHERE i.id = items.id AND items.user_id = users.id;'
                 cursor.execute(query, (ITEM_LIMIT, offset,))
                 app.logger.debug(cursor._last_executed)
 
