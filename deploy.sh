@@ -11,5 +11,9 @@ sudo cp infra/etc/nginx/niita /etc/nginx/sites-enabled/niita
 # mysql
 sudo cp infra/etc/mysql/mysql.conf.d/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf
 
+# pip
+pip3.7 install -r python/requirements.txt
+
 # log-lotate and restart services
 ./pre_bench.sh
+

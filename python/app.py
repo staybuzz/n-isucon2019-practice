@@ -15,6 +15,9 @@ from utils.utility import get_today
 from wsgi_lineprof.middleware import LineProfilerMiddleware
 from wsgi_lineprof.filters import FilenameFilter, TotalTimeSorter
 
+import pymysql
+from DBUtils.PooledDB import PooledDB
+
 static_folder = pathlib.Path(__file__).resolve().parent / 'public'
 app = Flask(__name__, static_folder=str(static_folder), static_url_path='')
 ### lineprof
@@ -69,6 +72,12 @@ dbparams = {
     'database': os.getenv('MYSQL_DATABASE'),
     'cursorclass': pymysql.cursors.DictCursor
 }
+mySQLConnectionPool = PooledDB(creator=pymysql,
+                               host=dbparams['host'],
+                               user=dbparams['user'],
+                               password=dbparams['password'],
+                               database=dbparams['database'],
+                               cursorclass=dbparams['cursorclass'])
 
 
 @app.route('/')
@@ -88,7 +97,7 @@ def signin():
     if username == '' or password == '':
         abort(400)
 
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
 
     with conn.cursor() as cursor:
         query = 'SELECT id, username, password_hash, salt FROM users WHERE username=%s'
@@ -123,7 +132,7 @@ def signout():
 # Todo: this GET method is for debugging
 @app.route('/users', methods=['GET'])
 def get_users_all():
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
     with conn.cursor() as cursor:
         query = 'SELECT id, username FROM users ORDER BY id ASC ;'
         cursor.execute(query)
@@ -140,7 +149,7 @@ def get_users_all():
 
 @app.route('/users/<string:username>', methods=['GET'])
 def get_users(username):
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
     with conn.cursor() as cursor:
         query = 'SELECT id, username, created_at, updated_at '\
                 'FROM users WHERE username = %s'
@@ -169,7 +178,7 @@ def post_users():
     if username == '' or password == '':
         abort(400)  # missing arguments
 
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
     try:
         with conn.cursor() as cursor:
             query = 'SELECT id FROM users WHERE username=%s'
@@ -218,7 +227,7 @@ def patch_users(username):
     if new_username == '' and password == '':
         abort(400)
 
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
     try:
         with conn.cursor() as cursor:
             query = 'SELECT id, username, salt, password_hash FROM users WHERE username=%s'
@@ -279,7 +288,7 @@ def patch_users(username):
 @app.route('/users/<string:username>', methods=['DELETE'])
 @login_required
 def delete_users(username):
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
     try:
         with conn.cursor() as cursor:
             query = 'SELECT id FROM users WHERE username=%s'
@@ -308,7 +317,7 @@ def delete_users(username):
 
 @app.route('/items/<int:item_id>', methods=['GET'])
 def get_item(item_id):
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
 
     try:
         with conn.cursor() as cursor:
@@ -336,7 +345,7 @@ def get_items():
     offset = int(request.args.get('page', 0)) * ITEM_LIMIT
     sort = request.args.get('sort', '')
 
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
     try:
         with conn.cursor() as cursor:
             if sort == 'like':
@@ -393,7 +402,7 @@ def post_icon(username):
 
 @ app.route('/users/<string:username>/icon', methods=['GET'])
 def get_icon(username):
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
     try:
         with conn.cursor() as cursor:
             query = 'SELECT id FROM users WHERE username=%s'
@@ -427,7 +436,7 @@ def post_item():
     if title == '' or body == '':
         abort(400)  # missing arguments
 
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
 
     try:
         with conn.cursor() as cursor:
@@ -469,7 +478,7 @@ def patch_item(item_id):
         abort(400)
 
     data = request.json
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
 
     try:
         with conn.cursor() as cursor:
@@ -527,7 +536,7 @@ def patch_item(item_id):
 @ app.route('/items/<int:item_id>', methods=['DELETE'])
 @ login_required
 def delete_item(item_id):
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
     try:
         with conn.cursor() as cursor:
             query = 'SELECT user_id FROM items WHERE id=%s'
@@ -554,7 +563,7 @@ def delete_item(item_id):
 
 @ app.route('/items/<int:item_id>/likes', methods=['GET'])
 def get_likes(item_id):
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
     try:
         with conn.cursor() as cursor:
             query = 'SELECT likes, likes_count FROM items WHERE id=%s'
@@ -581,7 +590,7 @@ def get_likes(item_id):
 @ app.route('/items/<int:item_id>/likes', methods=['POST'])
 @ login_required
 def post_likes(item_id):
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
 
     try:
         with conn.cursor() as cursor:
@@ -622,7 +631,7 @@ def post_likes(item_id):
 @ app.route('/items/<int:item_id>/likes', methods=['DELETE'])
 @ login_required
 def delete_likes(item_id):
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
 
     try:
         with conn.cursor() as cursor:
@@ -664,7 +673,7 @@ def delete_likes(item_id):
 
 @ app.route('/items/<int:item_id>/comments', methods=['GET'])
 def get_comments(item_id):
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
 
     try:
         with conn.cursor() as cursor:
@@ -711,7 +720,7 @@ def post_comment(item_id):
     if comment == '':
         abort(400)
 
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
     try:
         with conn.cursor() as cursor:
             query = 'SELECT id FROM items WHERE id=%s'
@@ -760,7 +769,7 @@ def post_comment(item_id):
             methods=['DELETE'])
 @ login_required
 def delete_coment(item_id, comment_id):
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
     try:
         with conn.cursor() as cursor:
             query = 'SELECT * FROM comments WHERE id=%s'
@@ -799,7 +808,7 @@ def delete_coment(item_id, comment_id):
 
 
 def get_username_by_id(user_id):
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
 
     try:
         with conn.cursor() as cursor:
@@ -822,7 +831,7 @@ def get_initialize():
 
 @ app.route('/get_likes_count', methods=['GET'])
 def get_likes_count():
-    conn = pymysql.connect(**dbparams)
+    conn = mySQLConnectionPool.connection()
     try:
         with conn.cursor() as cursor:
             query = 'SELECT id, likes FROM items'
