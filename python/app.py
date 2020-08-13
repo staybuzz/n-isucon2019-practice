@@ -312,7 +312,7 @@ def get_item(item_id):
 
     try:
         with conn.cursor() as cursor:
-            query = 'SELECT * FROM items WHERE id=%s'
+            query = 'SELECT items.*, users.username FROM items INNER JOIN users ON items.user_id = users.id WHERE items.id=%s'
             cursor.execute(query, (item_id,))
             app.logger.debug(cursor._last_executed)
             result = cursor.fetchone()
@@ -323,8 +323,6 @@ def get_item(item_id):
             if result['likes'] is None:
                 result['likes'] = ""
 
-        username = get_username_by_id(result['user_id'])
-        result['username'] = username
         result.pop('user_id')
 
         return jsonify(result)
