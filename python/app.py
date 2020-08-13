@@ -12,8 +12,19 @@ from flask_login import login_user, logout_user, current_user
 from utils.utility import get_salt, get_passwordhash
 from utils.utility import get_today
 
+from wsgi_lineprof.middleware import LineProfilerMiddleware
+from wsgi_lineprof.filters import FilenameFilter, TotalTimeSorter
+
 static_folder = pathlib.Path(__file__).resolve().parent / 'public'
 app = Flask(__name__, static_folder=str(static_folder), static_url_path='')
+### lineprof
+#app.config['PROFILE'] = True
+#filters = [
+#    FilenameFilter("app.py"),
+#    lambda stats: filter(lambda stat: stat.total_time > 0.0001, stats),
+#]
+#lineprof_f = open("/tmp/lineprof.log", "w")
+#app.wsgi_app = LineProfilerMiddleware(app.wsgi_app, stream=lineprof_f, filters=filters)
 
 
 # flask-login
@@ -345,11 +356,11 @@ def get_items():
 
             result = cursor.fetchall()
 
-            query = 'SELECT id FROM items'
+            query = 'SELECT count(id) FROM items'
             cursor.execute(query,)
             app.logger.debug(cursor._last_executed)
-            result_for_count = cursor.fetchall()
-            num_total_items = len(result_for_count)
+            result_for_count = cursor.fetchone()
+            num_total_items = result_for_count['count(id)']
 
         response = {
             'count': num_total_items,
